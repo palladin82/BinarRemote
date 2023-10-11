@@ -243,6 +243,20 @@ void displayMsgS1(String msg)
   u8g2->setDrawColor(1);
 }
 
+void displayMsgS2(String msg)
+{
+  char chars[msg.length()+1];
+  msg.toCharArray(chars,msg.length()+1);
+  u8g2->setDrawColor(1);
+  u8g2->drawBox(0, 80, 64, 13);
+  u8g2->setDrawColor(0);
+  //u8g2->drawStr(0, 80, chars);
+  u8g2->setCursor(0, 90);
+  u8g2->print(chars);
+  u8g2->sendBuffer();
+  u8g2->setDrawColor(1);
+}
+
 void displayBat(uint8_t msg)
 {
   float battery=(float)msg/10;
@@ -278,6 +292,24 @@ void displayTemp(char* msg)
 void displayX()
 {  
   u8g2->setDrawColor(0);
+  u8g2->drawBox(0, 90, 15, 13);
+  u8g2->setDrawColor(1);  
+  //u8g2->drawStr(0, 100, "X");
+  u8g2->setCursor(0, 100);
+  u8g2->print("X");
+
+  u8g2->sendBuffer();
+  delay(30);
+  u8g2->setDrawColor(0);
+  u8g2->drawBox(0, 90, 15, 13);
+  u8g2->sendBuffer();
+  u8g2->setDrawColor(1);
+}
+
+void displayRSSI()
+{  
+  u8g2->setDrawColor(0);
+  
   u8g2->drawBox(0, 90, 15, 13);
   u8g2->setDrawColor(1);  
   //u8g2->drawStr(0, 100, "X");
