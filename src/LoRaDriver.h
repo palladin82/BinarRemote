@@ -8,6 +8,9 @@
 #define RADIO_CS_PIN                18
 #define RADIO_DIO0_PIN              26
 #define RADIO_RST_PIN               14
+#define REG_PA_CONFIG            0x09
+#define REG_PA_DAC               0x4d
+#define REG_LNA                  0x0c
 //#define RADIO_DIO1_PIN              26
 //#define RADIO_BUSY_PIN              32
 
@@ -64,20 +67,19 @@ void LoRa_init()
   LoRa.setPins(RADIO_CS_PIN, RADIO_RST_PIN, RADIO_DIO0_PIN);// set CS, reset, IRQ pin
   
 
-  if (!LoRa.begin(910E6)) {             // initialize ratio at 915 MHz
+  if (!LoRa.begin(914E6)) {             // initialize ratio at 915 MHz
     //Serial.println("LoRa init failed. Check your connections.");
     while (true);                       // if failed, do nothing
   }
 
 
-  LoRa.setPreambleLength(16);
+  LoRa.setPreambleLength(8);
   
 
   LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_SLEEP);
   LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_LORA); //must be written in sleep mode
   //LoRa.SetMode(SX127x_OPMODE_STANDBY);
-  LoRa.idle();
-
+  
   LoRa.writeRegister(SX127X_REG_PAYLOAD_LENGTH, 8);
 
   //setRegValue(SX127X_REG_DIO_MAPPING_1, 0b11000000, 7, 6); //undocumented "hack", looking at Table 18 from datasheet SX127X_REG_DIO_MAPPING_1 = 11 appears to be unsupported by in fact it generates an interrupt on both RXdone and TXdone, this saves switching modes.
@@ -89,16 +91,21 @@ void LoRa_init()
   
   LoRa.setOCP(240);
   LoRa.setTxPower(20,PA_OUTPUT_PA_BOOST_PIN);
-  //LoRa.setTxPower(17);
+  //LoRa.setTxPower(20);
   //LoRa.setPreambleLength(2);
   //SetPreambleLength(SX127X_PREAMBLE_LENGTH_LSB);
   //setRegValue(SX127X_REG_INVERT_IQ, (uint8_t)IQinverted, 6, 6);
   //LoRa.setTxPower(20);
   //LoRa.setFrequency(868E6);
   LoRa.setSignalBandwidth(125E3);
-  LoRa.setCodingRate4(6);
+  LoRa.setCodingRate4(7);
   LoRa.setSpreadingFactor(12);
-  
+  LoRa.writeRegisterBits(SX127X_REG_DETECT_OPTIMIZE, SX127X_DETECT_OPTIMIZE_SF_7_12, SX127X_DETECT_OPTIMIZE_SF_MASK );
+  LoRa.writeRegister(SX127X_REG_DETECTION_THRESHOLD, SX127X_DETECTION_THRESHOLD_SF_7_12 );
+  LoRa.writeRegister(REG_PA_CONFIG, 0b11111111); // That's for the transceiver
+  LoRa.writeRegister(REG_PA_DAC, 0x87); // That's for the transceiver
+  LoRa.writeRegister(REG_LNA, 00); // TURN OFF LNA FOR TRANSMIT
+  LoRa.idle();
 }
 
 
