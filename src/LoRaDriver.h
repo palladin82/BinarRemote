@@ -85,8 +85,8 @@ void LoRa_init()
   //setRegValue(SX127X_REG_DIO_MAPPING_1, 0b11000000, 7, 6); //undocumented "hack", looking at Table 18 from datasheet SX127X_REG_DIO_MAPPING_1 = 11 appears to be unsupported by in fact it generates an interrupt on both RXdone and TXdone, this saves switching modes.
   //setRegValue(SX127X_REG_DIO_MAPPING_1, 0b11000000, 7, 6); //undocumented "hack", looking at Table 18 from datasheet SX127X_REG_DIO_MAPPING_1 = 11 appears to be unsupported by in fact it generates an interrupt on both RXdone and TXdone, this saves switching modes.
   
-  //LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON);
-  //LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3, SX1278_AGC_AUTO_ON | SX1278_LOW_DATA_RATE_OPT_OFF);
+  LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON);
+  LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3, SX1278_AGC_AUTO_ON | SX1278_LOW_DATA_RATE_OPT_OFF);
   //setRegValue(SX127X_REG_OCP, SX127X_OCP_ON | SX127X_OCP_150MA, 5, 0); //150ma max current
   
   LoRa.setOCP(240);
@@ -104,7 +104,7 @@ void LoRa_init()
   LoRa.writeRegister(SX127X_REG_DETECTION_THRESHOLD, SX127X_DETECTION_THRESHOLD_SF_7_12 );
   LoRa.writeRegister(REG_PA_CONFIG, 0b11111111); // That's for the transceiver
   LoRa.writeRegister(REG_PA_DAC, 0x87); // That's for the transceiver
-  LoRa.writeRegister(REG_LNA, 00); // TURN OFF LNA FOR TRANSMIT
+  //LoRa.writeRegister(REG_LNA, 00); // TURN OFF LNA FOR TRANSMIT
   LoRa.idle();
 }
 
