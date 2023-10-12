@@ -18,12 +18,15 @@
 
 #include "display.h"
 #include "LoRaDriver.h"
+
 #define BUTTON_PIN_BITMASK 0x000000001
+#define PIN_INPUT 0
+#define PIN_LED 2 // GIOP25 pin connected to led
 
 int temp = 55;
 unsigned int wakeflag=0;
 int tick=0;
-int timetosleep=6;
+
 bool crcok=false;
 bool pult=false;
 RTC_DATA_ATTR int bootCount = 0;
@@ -32,10 +35,11 @@ const int lcdBrightness = 10; // (0-255)
 
 
 static const unsigned long REFRESH_INTERVAL = 5000; // ms
+int timetosleep=12; // timetosleep * REFRESH_INTERVAL
 static unsigned long lastRefreshTime = 0;
 
-#define PIN_INPUT 0
-#define PIN_LED 2 // GIOP25 pin connected to led
+int commandQueue[255];
+int commandQueueD=0;
 
 OneButton button(PIN_INPUT, true);
 
@@ -44,14 +48,6 @@ OneButton button(PIN_INPUT, true);
 int lastState = HIGH; // the previous state from the input pin
 int currentState;
 uint8_t debug=0;
-
-
-
-
-
-
-
-
 
 
 int valueA = 1, valueB = 2, mainValue = 55;
@@ -303,8 +299,14 @@ void fMessage()
 }
 
 void fStart()
-{  
-  sendHEX(0xF8);
+{
+
+  if(commandQueueD<=254)
+  {
+    commandQueueD++;
+    commandQueue[commandQueueD]=0xF8;
+  }
+  //sendHEX(0xF8);
     if(debug)
     {
       //displayMsg(print(&MyHeater.start));
@@ -314,7 +316,12 @@ void fStart()
 
 void fStop()
 {
-    sendHEX(0xFC);
+  if(commandQueueD<=254)
+  {
+    commandQueueD++;
+    commandQueue[commandQueueD]=0xFC;
+  }
+    //sendHEX(0xFC);
     if(debug)
     {
       //displayMsg(print(&MyHeater.shutdown));
@@ -324,12 +331,17 @@ void fStop()
 
 void fGetStatus()
 {
-    sendHEX(0x08);
-    if(debug)
-    {
-      //displayMsg(print(&MyHeater.shutdown));
-      //Serial.println(print(&MyHeater.shutdown));
-    } 
+  if(commandQueueD<=254)
+  {
+    commandQueueD++;
+    commandQueue[commandQueueD]=0x08;
+  }
+  //sendHEX(0x08);
+  if(debug)
+  {
+    //displayMsg(print(&MyHeater.shutdown));
+    //Serial.println(print(&MyHeater.shutdown));
+  } 
 }
 
 
@@ -442,7 +454,7 @@ void setup()
   LoRa_init();
   TopMenu.begin(displayMenu, displayValue);
 
-
+  fGetStatus();
   
 // end setup
 }
@@ -485,13 +497,13 @@ void loop()
     sprintf(tempstr,"%s", LoraMessage);
     displayMsg(tempstr);
 
-    if(LoraCommand==0)
+    /*if(LoraCommand==0)
     {
         //sendPing();
         //sendStatus();
         fGetStatus();
         
-    }    
+    } */   
     if(LoraCommand==1)
     {
         //fStart();
@@ -507,6 +519,16 @@ void loop()
     }
     
     //if(status)fGetStatus();
+
+    if(commandQueueD>0)
+    {
+        sendHEX(commandQueue[commandQueueD]);
+        commandQueueD--;
+    }
+    else
+    {
+      fGetStatus();
+    }
 
 
     displayBat(LoraBatt);

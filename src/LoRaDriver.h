@@ -185,7 +185,7 @@ void onReceive(int packetSize)
 
   if (incoming[0] == 0xF8)
   {
-    LoraCommand=1;
+     LoraCommand=1;
   }
   if (incoming[0] == 0xFC)
   {
@@ -201,17 +201,21 @@ void onReceive(int packetSize)
   {
      LoraCommand=3;
   }
+
+
+
   if(incoming[0] == 0x20)
   {
-
      LoraMessage = incoming;
-     
+     displayMsgS0(incoming);
   }
+
+
   Serial.println(incoming);
-  char rssi[10];
-  char snr[10];
-  sprintf(rssi,"RSSI=%d Dbm",LoRa.packetRssi());
-  sprintf(snr, " SNR=%d Dbm",LoRa.packetSnr());
+  char rssi[16];
+  char snr[16];
+  snprintf(rssi,sizeof(rssi),"RSSI=%i Dbm",LoRa.packetRssi());
+  snprintf(snr,sizeof(snr), " SNR=%0.1f Dbm",LoRa.packetSnr());
   displayMsgS1(rssi);
   displayMsgS2(snr);  
 }

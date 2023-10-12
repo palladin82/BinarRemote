@@ -215,6 +215,20 @@ void displayMsg(char* msg)
   u8g2->setDrawColor(1);
 }
 
+void displayMsgS0(String msg)
+{
+  char chars[msg.length()+1];
+  msg.toCharArray(chars,msg.length()+1);
+  u8g2->setDrawColor(1);
+  u8g2->drawBox(0, 50, 64, 13);
+  u8g2->setDrawColor(0);
+  //u8g2->drawStr(0, 80, chars);
+  u8g2->setCursor(0, 60);
+  u8g2->print(chars);
+  u8g2->sendBuffer();
+  u8g2->setDrawColor(1);
+}
+
 void displayMsgS(String msg)
 {
   char chars[msg.length()+1];
@@ -256,6 +270,7 @@ void displayMsgS2(String msg)
   u8g2->sendBuffer();
   u8g2->setDrawColor(1);
 }
+
 
 void displayBat(uint8_t msg)
 {
