@@ -199,7 +199,7 @@ void onReceive(int packetSize)
   }
   if (incoming[0] == 0x08)
   {
-     LoraCommand=3; 
+     LoraCommand=3;
   }
 
 
