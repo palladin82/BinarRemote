@@ -7,4 +7,5 @@ ESP32 TTGO LoRa Remote Control
 
 ![img1](img/LoraRemote.jpg)
 
+<p align="center"> 
 ![img2](img/binar.jpg)
