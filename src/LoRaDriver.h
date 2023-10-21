@@ -13,7 +13,7 @@
 #define REG_PA_CONFIG            0x09
 #define REG_PA_DAC               0x4d
 #define REG_LNA                  0x0c
-#define Channel                  914E6
+#define Channel                  9093E5
 
 String outgoing;              // outgoing message
 String LoraMessage;
@@ -70,24 +70,37 @@ void LoRa_init()
   LoRa.prebegin(Channel);
   RxChainCalibration();
   LoRa.begin(Channel);
-  LoRa.setFrequency(Channel);
   LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_SLEEP);
   LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_LORA); //must be written in sleep mode
-  LoRa.writeRegister(SX127X_REG_PAYLOAD_LENGTH, 8);
-  LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON);
-  LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3, SX1278_AGC_AUTO_ON | SX1278_LOW_DATA_RATE_OPT_OFF);
+  LoRa.idle();
+  LoRa.setFrequency(Channel);
   LoRa.setOCP(240);
-  LoRa.setTxPower(20,PA_OUTPUT_PA_BOOST_PIN);
-  LoRa.setSignalBandwidth(125E3);
+  //LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN);
+  LoRa.setPreambleLength(6);
   LoRa.setCodingRate4(7);
   LoRa.setSpreadingFactor(12);
-  LoRa.setPreambleLength(16);
+  LoRa.setSignalBandwidth(125E3);
   writeRegisterBits(SX127X_REG_DETECT_OPTIMIZE, SX127X_DETECT_OPTIMIZE_SF_7_12, SX127X_DETECT_OPTIMIZE_SF_MASK );
   LoRa.writeRegister(SX127X_REG_DETECTION_THRESHOLD, SX127X_DETECTION_THRESHOLD_SF_7_12 );
+  LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON|SX127X_LNA_GAIN_1);
+  //LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_SLEEP);
+  //LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_LORA); //must be written in sleep mode
+  //LoRa.writeRegister(SX127X_REG_PAYLOAD_LENGTH, 32);
+  //LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON);
+  //LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3, SX1278_AGC_AUTO_ON | SX1278_LOW_DATA_RATE_OPT_OFF);
+  
+  //LoRa.setOCP(240);
+  //LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN);
+  //LoRa.setSignalBandwidth(62.5E3);
+  //LoRa.setCodingRate4(7);
+  //LoRa.setSpreadingFactor(12);
+  //LoRa.setPreambleLength(16);
+  //writeRegisterBits(SX127X_REG_DETECT_OPTIMIZE, SX127X_DETECT_OPTIMIZE_SF_7_12, SX127X_DETECT_OPTIMIZE_SF_MASK );
+  //LoRa.writeRegister(SX127X_REG_DETECTION_THRESHOLD, SX127X_DETECTION_THRESHOLD_SF_7_12 );
   //LoRa.writeRegister(REG_PA_CONFIG, 0b11111111); // That's for the transceiver
-  LoRa.writeRegister(REG_PA_DAC, 0x87); // That's for the transceiver
+  //LoRa.writeRegister(REG_PA_DAC, 0x87); // That's for the transceiver
   //LoRa.writeRegister(REG_LNA, 00); // TURN OFF LNA FOR TRANSMIT
-  LoRa.idle();
+  //LoRa.idle();
 }
 
 
@@ -101,9 +114,9 @@ void sendMessage(String outgoing)
   LoRa.write(msgCount);                 // add message ID
   LoRa.write(outgoing.length());        // add payload length
   LoRa.print(outgoing);                 // add payload
-  LoRa.endPacket(true);                    // finish packet and send it
+  LoRa.endPacket();                    // finish packet and send it
   msgCount++;
-  delay(200);                           // increment message ID
+  //delay(200);                           // increment message ID
   digitalWrite(2,0);
 }
 
@@ -116,9 +129,9 @@ void sendHEX(char outgoing)
   LoRa.write(msgCount);                 // add message ID
   LoRa.write(1);                        // add payload length
   LoRa.print(outgoing);                 // add payload
-  LoRa.endPacket(true);                     // finish packet and send it
+  LoRa.endPacket();                     // finish packet and send it
   msgCount++;                           // increment message ID
-  delay(200); 
+  //delay(200); 
   digitalWrite(2,0);
 }
 

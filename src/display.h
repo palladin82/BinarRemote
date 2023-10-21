@@ -357,13 +357,12 @@ char *GetStatus(int Status)
           static char msg[9];
           switch(Status)
           {
-            case 0: sprintf(msg,"OFF");return msg; break;
-            case 1: sprintf(msg,"START");return msg; break;
-            case 3: sprintf(msg,"STARTED");return msg; break;
-            case 4: sprintf(msg,"WORK");return msg; break;
-            case 5: sprintf(msg,"STOP");return msg; break;
-            case 6: sprintf(msg,"HIDLE");return msg; break;
-            default: sprintf(msg,"ERR %d",Status);return msg; break;
+            case 0: sprintf(msg,"Off");return msg; break;
+            case 1: sprintf(msg,"Start");return msg; break;
+            case 3: sprintf(msg,"Warm");return msg; break;
+            case 4: sprintf(msg,"Run");return msg; break;
+            case 5: sprintf(msg,"Shut");return msg; break;            
+            default: sprintf(msg,"E-%d",Status);return msg; break;
           }
           return msg;
     }

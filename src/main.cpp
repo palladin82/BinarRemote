@@ -465,12 +465,12 @@ void loop()
 {
   
   
-
+  onReceive(LoRa.parsePacket());
 
 	
 	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
 	{
-
+    
     if(Serial.available())
     {
         char temp;
@@ -493,9 +493,13 @@ void loop()
 
 		lastRefreshTime += REFRESH_INTERVAL;
 
-    char tempstr[25];
-    sprintf(tempstr,"%s", LoraMessage);
-    displayMsg(tempstr);
+    
+    if(LoraMessage.length()>0)
+    {
+      char tempstr[25];
+      sprintf(tempstr,"%s", LoraMessage);
+      displayMsg(tempstr);
+    }
 
     /*if(LoraCommand==0)
     {
@@ -559,7 +563,7 @@ void loop()
   
   
     //onReceive(LoRa.parsePacket());
-    onReceive(LoRa.parsePacket());
+    
   
 }
 
