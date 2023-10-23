@@ -5,11 +5,12 @@
   by NikMarch
 */
 #include <Arduino.h>
-#include <SPI.h>              // include libraries
+#include <SPI.h>              
 #include <esp_task_wdt.h>
 #include "soc/rtc_io_reg.h"
 #include "driver/rtc_io.h"
 #include "esp32/ulp.h"
+#include <ESP32Time.h>
 
 
 #include <OneButton.h>
@@ -30,6 +31,7 @@ int tick=0;
 bool crcok=false;
 bool pult=false;
 RTC_DATA_ATTR int bootCount = 0;
+ESP32Time rtc(10800); //gmt+3
 
 const int lcdBrightness = 10; // (0-255)
 
@@ -415,7 +417,8 @@ void print_wakeup_reason(){
 
 void setup()
 {
-
+  if(rtc.getHour()==3) rtc.setTime(0, 54, 9, 23, 10, 2023); //GMT TIME
+  
 
   EEPROM.begin(256);
   
@@ -463,13 +466,11 @@ void setup()
 
 void loop()
 {
-  
-  
   onReceive(LoRa.parsePacket());
-
-	
+  
 	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
 	{
+    lastRefreshTime += REFRESH_INTERVAL;
     
     if(Serial.available())
     {
@@ -491,7 +492,7 @@ void loop()
         //Serial.println(speed);
     }
 
-		lastRefreshTime += REFRESH_INTERVAL;
+		
 
     
     if(LoraMessage.length()>0)
@@ -534,7 +535,7 @@ void loop()
       fGetStatus();
     }
 
-
+    displayDateTime();
     displayBat(LoraBatt);
     char tempbuf[20];
     sprintf(tempbuf,"%d",LoraStatus);

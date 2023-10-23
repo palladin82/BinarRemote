@@ -14,7 +14,7 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C *u8g2 = nullptr;
 char CurMenu[256];
 
 char *GetStatus(int Status);
-
+extern ESP32Time rtc;
 #define bat_width  8
 #define bat_height 11
 
@@ -306,7 +306,7 @@ void displayTemp(char* msg)
 
 void displayX()
 {  
-  u8g2->setDrawColor(0);
+  /*u8g2->setDrawColor(0);
   u8g2->drawBox(0, 90, 15, 13);
   u8g2->setDrawColor(1);  
   //u8g2->drawStr(0, 100, "X");
@@ -318,8 +318,24 @@ void displayX()
   u8g2->setDrawColor(0);
   u8g2->drawBox(0, 90, 15, 13);
   u8g2->sendBuffer();
-  u8g2->setDrawColor(1);
+  u8g2->setDrawColor(1);*/
 }
+
+void displayDateTime()
+{  
+  u8g2->setDrawColor(0);
+  u8g2->drawBox(0, 90, 64, 13);
+  u8g2->setDrawColor(1);  
+  //u8g2->drawStr(0, 100, "X");
+  u8g2->setCursor(0, 100);
+  char DT[255];
+  sprintf(DT,"%d:%d",rtc.getHour(),rtc.getMinute());
+  //rtc.getDay(),rtc.getMonth(),rtc.getYear());
+
+  u8g2->print(DT);
+  u8g2->sendBuffer();  
+}
+
 
 void displayRSSI()
 {  
