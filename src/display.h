@@ -310,11 +310,12 @@ void displayDateTime()
   u8g2->setDrawColor(0);
   u8g2->drawBox(0, 90, 64, 13);
   u8g2->setDrawColor(1);  
-  //u8g2->drawStr(0, 100, "X");
+
   u8g2->setCursor(0, 100);
   char DT[255];
-  sprintf(DT,"%d:%d",rtc.getHour(),rtc.getMinute());
-  //rtc.getDay(),rtc.getMonth(),rtc.getYear());
+  
+  sprintf(DT,"%02d:%02d",rtc.getHour(true),rtc.getMinute());
+
 
   u8g2->print(DT);
   u8g2->sendBuffer();  
