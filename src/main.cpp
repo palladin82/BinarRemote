@@ -458,7 +458,7 @@ void setup()
   TopMenu.begin(displayMenu, displayValue);
 
   fGetStatus();
-  
+  lastRefreshTime = millis() + REFRESH_INTERVAL;
 // end setup
 }
 
