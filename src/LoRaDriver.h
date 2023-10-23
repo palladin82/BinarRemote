@@ -28,7 +28,7 @@ int LoraCommand=0;
 int LoraTemp=0;
 int LoraStatus=0;
 int LoraBatt=0;
-
+extern float LoRaSNR;
 
 static void RxChainCalibration( void );
 void SX1276SetModem();
@@ -211,6 +211,7 @@ void onReceive(int packetSize)
   char snr[16];
   snprintf(rssi,sizeof(rssi),"RSSI=%i Dbm",LoRa.packetRssi());
   snprintf(snr,sizeof(snr), " SNR=%0.1f Dbm",LoRa.packetSnr());
+  LoRaSNR=LoRa.packetSnr();
   displayMsgS1(rssi);
   displayMsgS2(snr);  
 }

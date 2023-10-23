@@ -32,9 +32,11 @@ bool crcok=false;
 bool pult=false;
 RTC_DATA_ATTR int bootCount = 0;
 ESP32Time rtc(10800); //gmt+3
+tm TS;
+bool timechanged=false;
 
 const int lcdBrightness = 10; // (0-255)
-
+float LoRaSNR=-20;
 
 static const unsigned long REFRESH_INTERVAL = 5000; // ms
 int timetosleep=12; // timetosleep * REFRESH_INTERVAL
@@ -132,12 +134,12 @@ void goto_deepsleep()
       
       LoRa.sleep();
       esp_deep_sleep_start();
-
-
 }
 
 int zero=0, one=1, four=4, five=5;
 int menuMaxShow=5;
+int Hour=-1;
+int Minutes=-1;
 
 SimpleMenu MenuSubSprd[] = {
   SimpleMenu("..", exitF),
@@ -152,25 +154,23 @@ SimpleMenu MenuSubSprd[] = {
   
 };
 
-SimpleMenu MenuSubBw[11] = {
-  SimpleMenu("..", exitF),
-  SimpleMenu("1200", setBw),
-  SimpleMenu("2400", setBw),
-  SimpleMenu("4800", setBw),
-  SimpleMenu("9600", setBw),
-  SimpleMenu("4800", setBw),
-  SimpleMenu("41.7E3", setBw),
-  SimpleMenu("62.5E3", setBw),
+/*SimpleMenu MenuSubTM[] = {  
+  SimpleMenu("00", setBw),
+  SimpleMenu("01", setBw),
+  SimpleMenu("02", setBw),
+  SimpleMenu("03", setBw),
+  SimpleMenu("04", setBw),
+  SimpleMenu("05", setBw),
+  SimpleMenu("06", setBw),
   SimpleMenu("125E3", setBw),
   SimpleMenu("250E3", setBw),
   SimpleMenu("500E3", setBw)
-};
+};*/
 
-SimpleMenu MenuSub[] = {
-  SimpleMenu("..", exitF),
-  SimpleMenu("SetStatus", 8, MenuSubSprd),
-  SimpleMenu("Bandwith", 11, MenuSubBw),
-  SimpleMenu("Debug-On", ToggleDebug)
+SimpleMenu MenuSub[2] = {  
+  SimpleMenu("SetHour", &TS.tm_hour,0,24),
+  SimpleMenu("SetMin", &TS.tm_min,0,60)
+  //SimpleMenu("Debug-On", ToggleDebug)
 };
 
 
@@ -179,7 +179,7 @@ SimpleMenu Menu[] = {
   SimpleMenu("Старт", fStart),
   SimpleMenu("Стоп", fStop),
   SimpleMenu("Запрос", fMessage),    
-  SimpleMenu("Конфиг", 4, MenuSub)
+  SimpleMenu("Конфиг", 2, MenuSub)
 };
 
 SimpleMenu TopMenu(4, Menu);
@@ -191,31 +191,63 @@ void displayMenu(SimpleMenu *_menu)
   int menucnt = 10;
   SimpleMenu *next;
   SimpleMenu *prev;
+  int index=_menu->getIndex();
+
+  //prev = TopMenu.next(-1);
   
   u8g2->setDrawColor(0);
-  u8g2->drawBox(0, 0, 64, 60);
-
-
-
+  u8g2->drawBox(0, 12, 64, 60);
   u8g2->setDrawColor(1);
-  u8g2->drawBox(0, 0, 64, 12);
-  
-  char buf[256];
-  snprintf(buf, sizeof(buf), "%s", _menu->name);
-  
-  
-  u8g2->setDrawColor(0);
-  
-  u8g2->setCursor(0, menucnt);
-  u8g2->print(buf);
-
-  //u8g2->drawStr(0, menucnt, buf); //работало!!! 10:05 10102023
   u8g2->sendBuffer();
 
+  for(int i=-menucnt/2;i<=menucnt/2;i++)
+  {
+    prev = TopMenu.next(i);
+    if(prev!=NULL)
+    {
+      menucnt += 11;
+      if(i==index)
+      {
+        u8g2->setDrawColor(1);
+        u8g2->drawBox(0, menucnt-9, 64, 11);
+        u8g2->setDrawColor(0);
+        char buf[256];
+        snprintf(buf, sizeof(buf), "%s", prev->name);
+        u8g2->setCursor(0, menucnt);
+        u8g2->print(buf);
+      }
+      else
+      {
+        u8g2->setDrawColor(1);
+        char buf[256];
+        snprintf(buf, sizeof(buf), "%s", prev->name);
+        u8g2->setCursor(0, menucnt);
+        u8g2->print(buf);
+      }
+      //u8g2->drawStr(0, menucnt, buf);  //тоже работало
+      u8g2->sendBuffer();
+    }
+  }
+  
 
 
 
-  for(int i=1;i<=menuMaxShow;i++)
+  /*u8g2->setDrawColor(0);
+  u8g2->drawBox(0, 0, 64, 60);
+  u8g2->setDrawColor(1);
+  u8g2->drawBox(0, 0, 64, 12);  
+  char buf[256];
+  if(prev!=NULL)snprintf(buf, sizeof(buf), "%s", prev->name);  
+  u8g2->setDrawColor(0);  
+  u8g2->setCursor(0, menucnt);
+  u8g2->print(buf);
+  //u8g2->drawStr(0, menucnt, buf); //работало!!! 10:05 10102023
+  u8g2->sendBuffer();*/
+
+
+
+
+  /*for(int i=1;i<=menuMaxShow;i++)
   {
     next = TopMenu.next(i);
     if (next != NULL && next != prev)
@@ -230,10 +262,31 @@ void displayMenu(SimpleMenu *_menu)
       u8g2->sendBuffer();
     }
     prev = next;
-
   }
-  
+  */
 }
+
+void displayValue(SimpleMenu *_menu)
+{
+  TS=rtc.getTimeStruct();
+  int menucnt = 10;
+  u8g2->setDrawColor(0);
+  u8g2->drawBox(0, 0, 64, 60);
+  u8g2->setDrawColor(1);
+  u8g2->drawBox(0, 0, 64, 12);
+  
+  char buf[256];
+  snprintf(buf, sizeof(buf), "%s %02d:%02d", _menu->name,(TS.tm_hour-(rtc.offset/3600)),TS.tm_min); 
+  
+  u8g2->setDrawColor(0);  
+  u8g2->setCursor(0, menucnt);
+  u8g2->print(buf);
+  u8g2->sendBuffer();
+  rtc.setTimeStruct(TS);
+  //timechanged = true;
+
+}
+
 
 SimpleMenu* ShowAllNext(SimpleMenu *menu, char *buf)
 {
@@ -457,8 +510,9 @@ void setup()
   LoRa_init();
   TopMenu.begin(displayMenu, displayValue);
 
+  
   fGetStatus();
-  lastRefreshTime = millis() + REFRESH_INTERVAL;
+  
 // end setup
 }
 
@@ -470,7 +524,7 @@ void loop()
   
 	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
 	{
-    lastRefreshTime += REFRESH_INTERVAL;
+    
     
     if(Serial.available())
     {
@@ -491,7 +545,7 @@ void loop()
         
         //Serial.println(speed);
     }
-
+    lastRefreshTime += REFRESH_INTERVAL;
 		
 
     
@@ -555,6 +609,9 @@ void loop()
       goto_deepsleep();
     }
     tick++;
+
+    
+    
 	}
 
   button.tick();

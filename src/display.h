@@ -15,8 +15,19 @@ char CurMenu[256];
 
 char *GetStatus(int Status);
 extern ESP32Time rtc;
+extern float LoRaSNR;
 #define bat_width  8
 #define bat_height 11
+
+
+static unsigned char image_ant[] = {
+ 0x00,0xf8,0x00,0xfe,0x00,0xfe,0xc0,0xfe,0xc0,0xfe,0xd8,0xfe,
+ 0xd8,0xfe,0xd8,0xfe,0xdb,0xfe,0xdb,0xfe,0x00,0xf8};
+
+ static unsigned char image_ant_inv[] = {
+ 0xff,0xff,0xff,0xf9,0xff,0xf9,0x3f,0xf9,0x3f,0xf9,0x27,0xf9,
+ 0x27,0xf9,0x27,0xf9,0x24,0xf9,0x24,0xf9,0xff,0xff};
+
 
 static unsigned char image_bati[] = {
  0xff,0xe7,0x81,0xbd,0xbd,0xbd,0x81,0x81,0x81,0x81,0x81};
@@ -306,18 +317,43 @@ void displayX()
 }
 
 void displayDateTime()
-{  
-  u8g2->setDrawColor(0);
-  u8g2->drawBox(0, 90, 64, 13);
-  u8g2->setDrawColor(1);  
-
-  u8g2->setCursor(0, 100);
-  char DT[255];
+{
+  u8g2->setDrawColor(1);
+  u8g2->drawBox(0, 0, 64, 11);
+  u8g2->sendBuffer();  
   
+  u8g2->setDrawColor(0);  
+
+  u8g2->setCursor(0, 10);
+  char DT[255];  
   sprintf(DT,"%02d:%02d",rtc.getHour(true),rtc.getMinute());
-
-
   u8g2->print(DT);
+
+  //Отобразить snr столбиками
+  //u8g2->setCursor(53, 10);
+  u8g2->drawXBM( 52, 0, 11, 11, image_ant);
+  
+  u8g2->setDrawColor(1);
+  if(LoRaSNR>=10)
+  {    
+    u8g2->drawBox(64, 0, 64, 11);
+  }
+  if(LoRaSNR>=5)
+  {    
+    u8g2->drawBox(62, 0, 64, 11);
+  }
+  if(LoRaSNR>=0)
+  {    
+    u8g2->drawBox(59, 0, 64, 11);
+  }
+  if(LoRaSNR>=-5)
+  {    
+    u8g2->drawBox(58, 0, 64, 11);
+  }
+  if(LoRaSNR>=-10)
+  {    
+    u8g2->drawBox(54, 0, 64, 11);
+  }
   u8g2->sendBuffer();  
 }
 
@@ -328,7 +364,7 @@ void displayRSSI()
   
   u8g2->drawBox(0, 90, 15, 13);
   u8g2->setDrawColor(1);  
-  //u8g2->drawStr(0, 100, "X");
+  
   u8g2->setCursor(0, 100);
   u8g2->print("X");
 
@@ -369,7 +405,7 @@ char *GetStatus(int Status)
           return msg;
     }
 
-void displayValue(SimpleMenu *_menu)
+/*void displayValue(SimpleMenu *_menu)
 {
 
   //u8g2->clearBuffer();
@@ -387,7 +423,7 @@ void displayValue(SimpleMenu *_menu)
   u8g2->sendBuffer();
   u8g2->setDrawColor(1);
 
-}
+}*/
 
 
 
