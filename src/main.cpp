@@ -557,6 +557,7 @@ esp_task_wdt_reset();
 
 while(1)
 {
+    vTaskDelay(1);
     //esp_task_wdt_reset();
     onReceive(LoRa.parsePacket());
     
