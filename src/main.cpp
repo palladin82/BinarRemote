@@ -11,7 +11,7 @@
 #include "driver/rtc_io.h"
 #include "esp32/ulp.h"
 #include <ESP32Time.h>
-
+#include <esp_task_wdt.h>
 
 #include <OneButton.h>
 #include <SimpleMenu.h>
@@ -23,10 +23,17 @@
 #define BUTTON_PIN_BITMASK 0x000000001
 #define PIN_INPUT 0
 #define PIN_LED 2 // GIOP25 pin connected to led
+#define WDT_TIMEOUT 100
+
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+void display_task(void * pvParameters);
+void loop_task(void * pvParameters);
+
 
 int temp = 55;
-unsigned int wakeflag=0;
-int tick=0;
+volatile unsigned int wakeflag=0;
+volatile int tick=0;
 
 bool crcok=false;
 bool pult=false;
@@ -38,9 +45,9 @@ bool timechanged=false;
 const int lcdBrightness = 10; // (0-255)
 float LoRaSNR=-20;
 
-static const unsigned long REFRESH_INTERVAL = 5000; // ms
-int timetosleep=12; // timetosleep * REFRESH_INTERVAL
-static unsigned long lastRefreshTime = 0;
+volatile static const unsigned long REFRESH_INTERVAL = 5000; // ms
+volatile int timetosleep=12; // timetosleep * REFRESH_INTERVAL
+volatile static unsigned long lastRefreshTime = 0;
 
 int commandQueue[255];
 int commandQueueD=0;
@@ -451,7 +458,8 @@ void IRAM_ATTR isr()
 }
 
 
-void print_wakeup_reason(){
+void print_wakeup_reason()
+{
   esp_sleep_wakeup_cause_t wakeup_reason;
 
   wakeup_reason = esp_sleep_get_wakeup_cause();
@@ -470,6 +478,8 @@ void print_wakeup_reason(){
 
 void setup()
 {
+  
+
   if(rtc.getHour()==3) rtc.setTime(0, 54, 9, 23, 10, 2023); //GMT TIME
   
 
@@ -512,15 +522,148 @@ void setup()
 
   
   fGetStatus();
-  
+
+
+
+  xTaskCreatePinnedToCore(
+                    display_task,   /* Task function. */
+                    "Task1",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    1,           /* priority of the task */
+                    &Task1,      /* Task handle to keep track of created task */
+                    1);          /* pin task to core 0 */                  
+  delay(100);
+
+  xTaskCreatePinnedToCore(
+                    loop_task,   /* Task function. */
+                    "Task2",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    1,           /* priority of the task */
+                    &Task1,      /* Task handle to keep track of created task */
+                    0);          /* pin task to core 0 */                  
+  delay(100);
+
+  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+  esp_task_wdt_add(Task1); //add current thread to WDT watch
+  esp_task_wdt_add(Task2); //add current thread to WDT watch
 // end setup
+}
+
+void loop_task(void * pvParameters)
+{
+esp_task_wdt_reset();
+
+while(1)
+{
+    //esp_task_wdt_reset();
+    onReceive(LoRa.parsePacket());
+    
+    if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
+    {
+      
+      
+      if(Serial.available())
+      {
+          char temp;
+          int speed=2400;
+          temp=Serial.read();
+          if(temp=='1')speed=1200;
+          if(temp=='2')speed=2400;
+          if(temp=='3')speed=4800;
+          if(temp=='4')speed=9600;
+          if(temp=='5')speed=57600;
+          if(temp=='d')debug=1;
+          if(temp=='+')fStart();
+          if(temp=='-')fStop();
+          if(temp=='s')fSettings();
+          //mySerial.end();
+          //mySerial.begin(speed);
+          
+          //Serial.println(speed);
+      }
+      lastRefreshTime += REFRESH_INTERVAL;
+      
+
+      
+      if(LoraMessage.length()>0)
+      {
+        char tempstr[25];
+        sprintf(tempstr,"%s", LoraMessage);
+        displayMsg(tempstr);
+      }
+
+      /*if(LoraCommand==0)
+      {
+          //sendPing();
+          //sendStatus();
+          fGetStatus();
+          
+      } */   
+      if(LoraCommand==1)
+      {
+          //fStart();
+          displayMsg("Старт OK");
+          LoraCommand=0;
+      }
+      
+      if(LoraCommand==2)
+      {
+          //fStop();
+          displayMsg("Стоп OK");
+          LoraCommand=0;
+      }
+      
+      //if(status)fGetStatus();
+
+      if(commandQueueD>0)
+      {
+          sendHEX(commandQueue[commandQueueD]);
+          commandQueueD--;
+      }
+      else
+      {
+        fGetStatus();
+      }
+
+        displayDateTime();
+        displayBat(LoraBatt);
+        char tempbuf[20];
+        sprintf(tempbuf,"%d",LoraStatus);
+        displayStatus(tempbuf);
+        char temps[30];
+        sprintf(temps,"%d*",LoraTemp);
+        displayTemp(temps);
+      
+      if(tick > 0 && wakeflag > 0)
+      {
+          tick=0;
+      }
+
+      else if(tick > timetosleep)
+      {
+        //need to go sleep
+        goto_deepsleep();
+      }
+      tick++;
+
+      
+      
+    }
+
+
+
+  }
+
+
 }
 
 
 
 void loop()
 {
-  onReceive(LoRa.parsePacket());
+  /*onReceive(LoRa.parsePacket());
   
 	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
 	{
@@ -556,13 +699,7 @@ void loop()
       displayMsg(tempstr);
     }
 
-    /*if(LoraCommand==0)
-    {
-        //sendPing();
-        //sendStatus();
-        fGetStatus();
-        
-    } */   
+    
     if(LoraCommand==1)
     {
         //fStart();
@@ -589,14 +726,14 @@ void loop()
       fGetStatus();
     }
 
-    displayDateTime();
-    displayBat(LoraBatt);
-    char tempbuf[20];
-    sprintf(tempbuf,"%d",LoraStatus);
-    displayStatus(tempbuf);
-    char temps[30];
-    sprintf(temps,"%d*",LoraTemp);
-    displayTemp(temps);
+      displayDateTime();
+      displayBat(LoraBatt);
+      char tempbuf[20];
+      sprintf(tempbuf,"%d",LoraStatus);
+      displayStatus(tempbuf);
+      char temps[30];
+      sprintf(temps,"%d*",LoraTemp);
+      displayTemp(temps);
     
     if(tick > 0 && wakeflag > 0)
     {
@@ -612,17 +749,27 @@ void loop()
 
     
     
-	}
+	}*/
 
-  button.tick();
-
-
-   
-  
+  sleep(1000);
+  esp_task_wdt_reset();
   
     //onReceive(LoRa.parsePacket());
     
   
+}
+
+void display_task(void * pvParameters)
+{
+  
+  for(;;)
+  {
+    //wdt
+    esp_task_wdt_reset();
+    //onReceive(LoRa.parsePacket());
+    button.tick();  
+    delay(10);
+  }
 }
 
 

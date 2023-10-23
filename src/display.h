@@ -22,11 +22,11 @@ extern float LoRaSNR;
 
 static unsigned char image_ant[] = {
  0x00,0xf8,0x00,0xfe,0x00,0xfe,0xc0,0xfe,0xc0,0xfe,0xd8,0xfe,
- 0xd8,0xfe,0xd8,0xfe,0xdb,0xfe,0xdb,0xfe,0x00,0xf8};
+ 0xd8,0xfe,0xdb,0xfe,0xdb,0xfe,0xdb,0xfe,0x00,0xf8};
 
  static unsigned char image_ant_inv[] = {
  0xff,0xff,0xff,0xf9,0xff,0xf9,0x3f,0xf9,0x3f,0xf9,0x27,0xf9,
- 0x27,0xf9,0x27,0xf9,0x24,0xf9,0x24,0xf9,0xff,0xff};
+ 0x27,0xf9,0x24,0xf9,0x24,0xf9,0x24,0xf9,0xff,0xff};
 
 
 static unsigned char image_bati[] = {
@@ -318,6 +318,7 @@ void displayX()
 
 void displayDateTime()
 {
+  //u8g2->nextPage();
   u8g2->setDrawColor(1);
   u8g2->drawBox(0, 0, 64, 11);
   u8g2->sendBuffer();  
@@ -332,29 +333,32 @@ void displayDateTime()
   //Отобразить snr столбиками
   //u8g2->setCursor(53, 10);
   u8g2->drawXBM( 52, 0, 11, 11, image_ant);
-  
+  u8g2->sendBuffer(); 
+
   u8g2->setDrawColor(1);
-  if(LoRaSNR>=10)
+
+  if(LoRaSNR<=10)
   {    
     u8g2->drawBox(64, 0, 64, 11);
   }
-  if(LoRaSNR>=5)
+  if(LoRaSNR<=5)
   {    
     u8g2->drawBox(62, 0, 64, 11);
   }
-  if(LoRaSNR>=0)
+  if(LoRaSNR<=0)
   {    
     u8g2->drawBox(59, 0, 64, 11);
   }
-  if(LoRaSNR>=-5)
+  if(LoRaSNR<=-5)
   {    
     u8g2->drawBox(58, 0, 64, 11);
   }
-  if(LoRaSNR>=-10)
+  if(LoRaSNR<=-10)
   {    
     u8g2->drawBox(54, 0, 64, 11);
   }
   u8g2->sendBuffer();  
+  //u8g2->firstPage();
 }
 
 
