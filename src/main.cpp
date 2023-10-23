@@ -525,29 +525,29 @@ void setup()
 
 
 
-  xTaskCreatePinnedToCore(
-                    display_task,   /* Task function. */
-                    "Task1",     /* name of task. */
-                    10000,       /* Stack size of task */
-                    NULL,        /* parameter of the task */
-                    1,           /* priority of the task */
-                    &Task1,      /* Task handle to keep track of created task */
-                    1);          /* pin task to core 0 */                  
-  delay(100);
+//  xTaskCreatePinnedToCore(
+//                    display_task,   /* Task function. */
+                    //"Task1",     /* name of task. */
+                    //10000,       /* Stack size of task */
+                    //NULL,        /* parameter of the task */
+                    //1,           /* priority of the task */
+                    //&Task1,      /* Task handle to keep track of created task */
+                    //1);          /* pin task to core 0 */                  
+  //delay(100);
 
-  xTaskCreatePinnedToCore(
-                    loop_task,   /* Task function. */
-                    "Task2",     /* name of task. */
-                    10000,       /* Stack size of task */
-                    NULL,        /* parameter of the task */
-                    1,           /* priority of the task */
-                    &Task1,      /* Task handle to keep track of created task */
-                    0);          /* pin task to core 0 */                  
-  delay(100);
+  //xTaskCreatePinnedToCore(
+                    //loop_task,   /* Task function. */
+                    //"Task2",     /* name of task. */
+                    //10000,       /* Stack size of task */
+                    //NULL,        /* parameter of the task */
+                    //1,           /* priority of the task */
+                    //&Task1,      /* Task handle to keep track of created task */
+                    //0);          /* pin task to core 0 */                  
+  //delay(100);
 
-  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
-  esp_task_wdt_add(Task1); //add current thread to WDT watch
-  esp_task_wdt_add(Task2); //add current thread to WDT watch
+  //esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+  //esp_task_wdt_add(Task1); //add current thread to WDT watch
+  //esp_task_wdt_add(Task2); //add current thread to WDT watch
 // end setup
 }
 
@@ -663,7 +663,7 @@ while(1)
 
 void loop()
 {
-  /*onReceive(LoRa.parsePacket());
+  onReceive(LoRa.parsePacket());
   
 	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
 	{
@@ -749,12 +749,12 @@ void loop()
 
     
     
-	}*/
+	}
 
-  sleep(1000);
-  esp_task_wdt_reset();
+  button.tick();
+  //esp_task_wdt_reset();
   
-    //onReceive(LoRa.parsePacket());
+
     
   
 }

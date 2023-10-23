@@ -15,6 +15,9 @@ char CurMenu[256];
 
 char *GetStatus(int Status);
 extern ESP32Time rtc;
+unsigned long prevEpoch;
+int prevSNR;
+
 extern float LoRaSNR;
 #define bat_width  8
 #define bat_height 11
@@ -319,46 +322,56 @@ void displayX()
 void displayDateTime()
 {
   //u8g2->nextPage();
-  u8g2->setDrawColor(1);
-  u8g2->drawBox(0, 0, 64, 11);
-  u8g2->sendBuffer();  
-  
-  u8g2->setDrawColor(0);  
-
-  u8g2->setCursor(0, 10);
-  char DT[255];  
-  sprintf(DT,"%02d:%02d",rtc.getHour(true),rtc.getMinute());
-  u8g2->print(DT);
+  if(prevEpoch<rtc.getEpoch())
+  {
+    u8g2->setDrawColor(1);
+    u8g2->drawBox(0, 0, 32, 11);
+    u8g2->setDrawColor(0);
+    u8g2->setCursor(0, 10);
+    char DT[255];  
+    sprintf(DT,"%02d:%02d",rtc.getHour(true),rtc.getMinute());
+    u8g2->print(DT);
+    u8g2->sendBuffer();
+    prevEpoch=rtc.getEpoch();
+  }
 
   //Отобразить snr столбиками
   //u8g2->setCursor(53, 10);
-  u8g2->drawXBM( 52, 0, 11, 11, image_ant);
-  u8g2->sendBuffer(); 
+  if(prevSNR!=LoRaSNR)
+  {
+    //u8g2->drawBox(0, 0, 32, 11);
+    u8g2->setDrawColor(1);
+    u8g2->drawBox(32, 0, 32, 11);
+    u8g2->setDrawColor(0);
+    u8g2->drawXBM( 52, 0, 11, 11, image_ant);
+    //u8g2->sendBuffer(); 
 
-  u8g2->setDrawColor(1);
+    u8g2->setDrawColor(1);
 
-  if(LoRaSNR<=10)
-  {    
-    u8g2->drawBox(64, 0, 64, 11);
+    if(LoRaSNR<=10)
+    {    
+      u8g2->drawBox(64, 0, 64, 11);
+    }
+    if(LoRaSNR<=5)
+    {    
+      u8g2->drawBox(62, 0, 64, 11);
+    }
+    if(LoRaSNR<=0)
+    {    
+      u8g2->drawBox(59, 0, 64, 11);
+    }
+    if(LoRaSNR<=-5)
+    {    
+      u8g2->drawBox(58, 0, 64, 11);
+    }
+    if(LoRaSNR<=-10)
+    {    
+      u8g2->drawBox(54, 0, 64, 11);
+    }
+    u8g2->sendBuffer();  
+    //u8g2->firstPage();
+    prevSNR=LoRaSNR;
   }
-  if(LoRaSNR<=5)
-  {    
-    u8g2->drawBox(62, 0, 64, 11);
-  }
-  if(LoRaSNR<=0)
-  {    
-    u8g2->drawBox(59, 0, 64, 11);
-  }
-  if(LoRaSNR<=-5)
-  {    
-    u8g2->drawBox(58, 0, 64, 11);
-  }
-  if(LoRaSNR<=-10)
-  {    
-    u8g2->drawBox(54, 0, 64, 11);
-  }
-  u8g2->sendBuffer();  
-  //u8g2->firstPage();
 }
 
 
