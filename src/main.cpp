@@ -23,7 +23,7 @@
 #define BUTTON_PIN_BITMASK 0x000000001
 #define PIN_INPUT 0
 #define PIN_LED 2 // GIOP25 pin connected to led
-#define WDT_TIMEOUT 100
+#define WDT_TIMEOUT 3
 
 TaskHandle_t Task1;
 TaskHandle_t Task2;
@@ -525,15 +525,15 @@ void setup()
 
 
 
-//  xTaskCreatePinnedToCore(
-//                    display_task,   /* Task function. */
-                    //"Task1",     /* name of task. */
-                    //10000,       /* Stack size of task */
-                    //NULL,        /* parameter of the task */
-                    //1,           /* priority of the task */
-                    //&Task1,      /* Task handle to keep track of created task */
-                    //1);          /* pin task to core 0 */                  
-  //delay(100);
+  xTaskCreatePinnedToCore(
+                    display_task,   /* Task function. */
+                    "Task1",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    2,           /* priority of the task */
+                    &Task1,      /* Task handle to keep track of created task */
+                    1);          /* pin task to core 0 */                  
+  delay(100);
 
   //xTaskCreatePinnedToCore(
                     //loop_task,   /* Task function. */
@@ -752,9 +752,9 @@ void loop()
     
 	}
 
-  button.tick();
+  //button.tick();
   //esp_task_wdt_reset();
-  
+  vTaskDelay(1);
 
     
   
@@ -766,10 +766,10 @@ void display_task(void * pvParameters)
   for(;;)
   {
     //wdt
-    esp_task_wdt_reset();
+    //esp_task_wdt_reset();
     //onReceive(LoRa.parsePacket());
     button.tick();  
-    delay(10);
+    vTaskDelay(10);
   }
 }
 
