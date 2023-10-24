@@ -19,11 +19,29 @@
 
 #include "display.h"
 #include "LoRaDriver.h"
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
+#include <HTTPUpdateServer.h>
 
 #define BUTTON_PIN_BITMASK 0x000000001
 #define PIN_INPUT 0
 #define PIN_LED 2 // GIOP25 pin connected to led
 #define WDT_TIMEOUT 3
+
+
+#ifndef STASSID
+#define STASSID "Binar5S"
+#define STAPSK  "12348765"
+#endif
+ 
+WebServer httpServer(80);
+HTTPUpdateServer httpUpdater;
+
+const char* host = "binar";
+const char* ssid = STASSID;
+const char* password = STAPSK;
 
 TaskHandle_t Task1;
 TaskHandle_t Task2;
@@ -109,7 +127,7 @@ void ulp_start(void)
 void goto_deepsleep()
 {
   
-     
+      WiFi.mode(WIFI_OFF);
 
       if(debug)
       {
@@ -548,6 +566,31 @@ void setup()
   //esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
   //esp_task_wdt_add(Task1); //add current thread to WDT watch
   //esp_task_wdt_add(Task2); //add current thread to WDT watch
+
+
+  //while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    WiFi.softAP(ssid, password);
+    
+  //}
+
+ IPAddress IP = WiFi.softAPIP();
+  //WiFi.begin(ssid, password);
+    Serial.print("AP IP address: ");
+    Serial.println(IP);
+    //Serial.println("WiFi failed, retrying.");
+  MDNS.begin(host);
+  if (MDNS.begin("esp32")) {
+    Serial.println("mDNS responder started");
+  }
+ 
+ 
+  httpUpdater.setup(&httpServer);
+  httpServer.begin();
+ 
+  MDNS.addService("http", "tcp", 80);
+  Serial.printf("HTTPUpdateServer ready! Open http://%s.local/update in your browser\n", host);
+
+
 // end setup
 }
 
@@ -664,6 +707,7 @@ while(1)
 
 void loop()
 {
+  httpServer.handleClient();
   onReceive(LoRa.parsePacket());
   
 	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
