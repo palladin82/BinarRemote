@@ -2,7 +2,7 @@
 #include "sx127xRegs.h"
 #include "sx1276Regs-LoRa.h"
 #include "sx1276Regs-Fsk.h"
-#define FREQ_STEP                                   61.03515625
+
 
 #define RADIO_SCLK_PIN              5
 //#define RADIO_MISO_PIN              19
@@ -14,6 +14,7 @@
 #define REG_PA_DAC               0x4d
 #define REG_LNA                  0x0c
 #define Channel                  9093E5
+
 
 String outgoing;              // outgoing message
 String LoraMessage;
@@ -30,10 +31,19 @@ int LoraStatus=0;
 int LoraBatt=0;
 extern float LoRaSNR;
 
+int currBW = SX127x_BW_125_00_KHZ;
+int32_t FreqCorrection;
+#define FREQ_STEP 61.03515625
+#define FreqCorrectionMax ((int32_t)(100000/FREQ_STEP))
+#define FreqCorrectionMin (-FreqCorrectionMax)
+
+
 static void RxChainCalibration( void );
 void SX1276SetModem();
 uint8_t SX1276Read( uint16_t addr );
 void writeRegisterBits(uint8_t reg, uint8_t value, uint8_t mask);
+bool  GetFrequencyErrorbool();
+void  SetPPMoffsetReg(long offset);
 
 /*uint8_t setRegValue(uint8_t reg, uint8_t value, uint8_t msb, uint8_t lsb)
 {
@@ -213,7 +223,17 @@ void onReceive(int packetSize)
   snprintf(snr,sizeof(snr), " SNR=%0.1f Dbm",LoRa.packetSnr());
   LoRaSNR=LoRa.packetSnr();
   displayMsgS1(rssi);
-  displayMsgS2(snr);  
+  displayMsgS2(snr);
+
+  //freq correction!!!
+  long ferr=0;
+  if(GetFrequencyErrorbool())
+  {
+    ferr=LoRa.packetFrequencyError();
+    SetPPMoffsetReg(ferr);
+  }
+  
+    
 }
 
 uint8_t SX1276Read( uint16_t addr )
@@ -289,4 +309,32 @@ void writeRegisterBits(uint8_t reg, uint8_t value, uint8_t mask)
         uint8_t newValue = (currentValue & ~mask) | (value & mask);
         LoRa.writeRegister(reg, newValue);
     
+}
+
+
+
+
+
+
+
+
+bool  GetFrequencyErrorbool()
+{
+  return (LoRa.readRegister(SX127X_REG_FEI_MSB) & 0b1000) >> 3; // returns true if pos freq error, neg if false
+}
+
+
+
+
+void  SetPPMoffsetReg(long offset)
+{
+  float tf;
+  tf = ((float)offset)/(float)Channel;
+  tf *= 1000000.0;
+  
+  if (tf < 100.0 && tf > -100.0)
+  {
+        LoRa.writeRegister(SX127x_PPMOFFSET, (uint8_t)tf);
+  }
+ 
 }

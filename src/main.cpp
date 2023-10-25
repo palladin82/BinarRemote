@@ -42,6 +42,7 @@ HTTPUpdateServer httpUpdater;
 const char* host = "binar";
 const char* ssid = STASSID;
 const char* password = STAPSK;
+bool wifi;
 
 TaskHandle_t Task1;
 TaskHandle_t Task2;
@@ -84,6 +85,7 @@ int valueA = 1, valueB = 2, mainValue = 55;
 void fStart();
 void fStop();
 void exitF();
+void fWifion();
 void sendStatus();
 void fMessage();
 void setBw();
@@ -192,7 +194,9 @@ SimpleMenu MenuSubSprd[] = {
   SimpleMenu("500E3", setBw)
 };*/
 
-SimpleMenu MenuSub[2] = {  
+SimpleMenu MenuSub[] = {
+  SimpleMenu("..",exitF),
+  SimpleMenu("Wifi On",fWifion), 
   SimpleMenu("SetHour", &TS.tm_hour,0,24),
   SimpleMenu("SetMin", &TS.tm_min,0,60)
   //SimpleMenu("Debug-On", ToggleDebug)
@@ -204,7 +208,7 @@ SimpleMenu Menu[] = {
   SimpleMenu("Старт", fStart),
   SimpleMenu("Стоп", fStop),
   SimpleMenu("Запрос", fMessage),    
-  SimpleMenu("Конфиг", 2, MenuSub)
+  SimpleMenu("Конфиг", 4, MenuSub)
 };
 
 SimpleMenu TopMenu(4, Menu);
@@ -376,6 +380,34 @@ void fMessage()
 
     sendHEX(0x08);
 
+}
+
+
+void fWifion()
+{
+  wifi=true;
+  WiFi.softAP(ssid, password);
+    
+  
+
+  IPAddress IP = WiFi.softAPIP();
+  
+  Serial.print("AP IP address: ");
+  Serial.println(IP);
+  
+  
+  if (MDNS.begin(host)) 
+  {
+    Serial.println("mDNS responder started");
+  }
+ 
+ 
+  httpUpdater.setup(&httpServer);
+  httpServer.begin();
+ 
+  MDNS.addService("http", "tcp", 80);
+  //Serial.print("HTTPUpdateServer ready! Open http://%s.local/update in your browser\n", host);
+  tick=-20;
 }
 
 void fStart()
@@ -568,27 +600,8 @@ void setup()
   //esp_task_wdt_add(Task2); //add current thread to WDT watch
 
 
-  //while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    WiFi.softAP(ssid, password);
+  
     
-  //}
-
- IPAddress IP = WiFi.softAPIP();
-  //WiFi.begin(ssid, password);
-    Serial.print("AP IP address: ");
-    Serial.println(IP);
-    //Serial.println("WiFi failed, retrying.");
-  MDNS.begin(host);
-  if (MDNS.begin("esp32")) {
-    Serial.println("mDNS responder started");
-  }
- 
- 
-  httpUpdater.setup(&httpServer);
-  httpServer.begin();
- 
-  MDNS.addService("http", "tcp", 80);
-  Serial.printf("HTTPUpdateServer ready! Open http://%s.local/update in your browser\n", host);
 
 
 // end setup
@@ -707,7 +720,7 @@ while(1)
 
 void loop()
 {
-  httpServer.handleClient();
+  if(wifi)httpServer.handleClient();
   onReceive(LoRa.parsePacket());
   
 	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
