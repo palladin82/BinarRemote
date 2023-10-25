@@ -90,6 +90,7 @@ void LoRa_init()
   LoRa.setCodingRate4(7);
   LoRa.setSpreadingFactor(12);
   LoRa.setSignalBandwidth(125E3);
+  LoRa.enableCrc();
   writeRegisterBits(SX127X_REG_DETECT_OPTIMIZE, SX127X_DETECT_OPTIMIZE_SF_7_12, SX127X_DETECT_OPTIMIZE_SF_MASK );
   LoRa.writeRegister(SX127X_REG_DETECTION_THRESHOLD, SX127X_DETECTION_THRESHOLD_SF_7_12 );
   LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON|SX127X_LNA_GAIN_1);
