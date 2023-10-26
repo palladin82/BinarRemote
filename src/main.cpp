@@ -44,6 +44,8 @@ const char* ssid = STASSID;
 const char* password = STAPSK;
 bool wifi;
 
+
+
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 void display_task(void * pvParameters);
@@ -72,7 +74,7 @@ int commandQueue[255];
 int commandQueueD=0;
 
 OneButton button(PIN_INPUT, true);
-
+int64_t eepromChannel;
 
 // Variables will change:
 int lastState = HIGH; // the previous state from the input pin
@@ -387,7 +389,9 @@ void fWifion()
 {
   wifi=true;
   WiFi.softAP(ssid, password);
-    
+  LoRa.setFrequency(Channel);
+  eepromChannel = Channel/10000;
+  currChannel = Channel;
   
 
   IPAddress IP = WiFi.softAPIP();
@@ -528,7 +532,11 @@ void print_wakeup_reason()
 
 void setup()
 {
-  
+
+  init_oled();
+
+  Serial.begin(115200);
+  while (!Serial);
 
   if(rtc.getHour()==3) rtc.setTime(0, 54, 9, 23, 10, 2023); //GMT TIME
   
@@ -543,17 +551,19 @@ void setup()
 
   
   debug = EEPROM.read(0);
-  
+
+  eepromChannel = EEPROM.readLong64(2);
+  currChannel = eepromChannel * 10000;
+
+  Serial.print("eepromchannel=");
+  Serial.println(eepromChannel);
 
 
   button.attachDoubleClick(doubleClick);
   button.attachClick(Click);
   button.attachLongPressStart(longClick);
 
-  init_oled();
-
-  Serial.begin(115200);
-  while (!Serial);
+  
 
 
   Serial.println("Boot number: " + String(bootCount));
