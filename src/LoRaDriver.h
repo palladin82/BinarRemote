@@ -16,8 +16,9 @@
 #define Channel                  9093E5
 
 
-extern int64_t eepromChannel;
-int64_t currChannel=0;
+extern double freqOffset;
+extern double maxfreqOffset;
+long corrChannel;
 
 String outgoing;              // outgoing message
 String LoraMessage;
@@ -45,22 +46,8 @@ static void RxChainCalibration( void );
 void SX1276SetModem();
 uint8_t SX1276Read( uint16_t addr );
 void writeRegisterBits(uint8_t reg, uint8_t value, uint8_t mask);
-bool  GetFrequencyErrorbool();
-void  SetPPMoffsetReg(float offset);
+void  SetPPMoffsetReg(double offset);
 
-/*uint8_t setRegValue(uint8_t reg, uint8_t value, uint8_t msb, uint8_t lsb)
-{
-  if ((msb > 7) || (lsb > 7) || (lsb > msb))
-  {
-    return (ERR_INVALID_BIT_RANGE);
-  }
-
-  //uint8_t currentValue = LoRa.readRegister(reg);
-  uint8_t mask = ~((0b11111111 << (msb + 1)) | (0b11111111 >> (8 - lsb)));
-  uint8_t newValue = (currentValue & ~mask) | (value & mask);
-  //LoRa.writeRegister(reg, newValue);
-  return (ERR_NONE);
-}*/
 
 
 void setSprd()
@@ -68,57 +55,42 @@ void setSprd()
   int index;
 
 
-  //LoRa.setSpreadingFactor(atoi(CurMenu));
-  //EEPROM.write(0, atoi(CurMenu));
-  //EEPROM.commit();
-  //Serial.println(atoi(CurMenu));
+
 
 }
 
 
 void LoRa_init()
 {
-      // override the default CS, reset, and IRQ pins (optional)
+  // override the default CS, reset, and IRQ pins (optional)
   LoRa.setPins(RADIO_CS_PIN, RADIO_RST_PIN, RADIO_DIO0_PIN);// set CS, reset, IRQ pin
   
-  //RxChainCalibration();
-  if(eepromChannel!=0)currChannel=eepromChannel*10000;
-  else currChannel=Channel;
+  corrChannel=Channel;
+  corrChannel += freqOffset*1E4;
 
-  LoRa.prebegin(eepromChannel);
-  LoRa.begin(eepromChannel);
+  LoRa.prebegin(corrChannel);
+  LoRa.begin(corrChannel);
+
+  LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_SLEEP);
+  LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_SLEEP);
   LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_SLEEP);
   LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_LORA); //must be written in sleep mode
-  LoRa.idle();
-  LoRa.setFrequency(Channel);
+  
+  LoRa.setFrequency(corrChannel);
   LoRa.setOCP(240);
   LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN);
+  LoRa.writeRegister(REG_PA_CONFIG, 0xff);
   LoRa.setPreambleLength(6);
   LoRa.setCodingRate4(7);
   LoRa.setSpreadingFactor(12);
   LoRa.setSignalBandwidth(125E3);
   //LoRa.enableCrc();
   //LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3,RF_RXCONFIG_AGCAUTO_OFF);
+  LoRa.writeRegister(SX127X_REG_DETECT_OPTIMIZE, 0x63);
   writeRegisterBits(SX127X_REG_DETECT_OPTIMIZE, SX127X_DETECT_OPTIMIZE_SF_7_12, SX127X_DETECT_OPTIMIZE_SF_MASK );
   LoRa.writeRegister(SX127X_REG_DETECTION_THRESHOLD, SX127X_DETECTION_THRESHOLD_SF_7_12 );
-  LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON|SX127X_LNA_GAIN_1);//LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_SLEEP);
-  //LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_LORA); //must be written in sleep mode
-  //LoRa.writeRegister(SX127X_REG_PAYLOAD_LENGTH, 32);
-  //LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON);
-  //LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3, SX1278_AGC_AUTO_ON | SX1278_LOW_DATA_RATE_OPT_OFF);
-  
-  //LoRa.setOCP(240);
-  //LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN);
-  //LoRa.setSignalBandwidth(62.5E3);
-  //LoRa.setCodingRate4(7);
-  //LoRa.setSpreadingFactor(12);
-  //LoRa.setPreambleLength(16);
-  //writeRegisterBits(SX127X_REG_DETECT_OPTIMIZE, SX127X_DETECT_OPTIMIZE_SF_7_12, SX127X_DETECT_OPTIMIZE_SF_MASK );
-  //LoRa.writeRegister(SX127X_REG_DETECTION_THRESHOLD, SX127X_DETECTION_THRESHOLD_SF_7_12 );
-  //LoRa.writeRegister(REG_PA_CONFIG, 0b11111111); // That's for the transceiver
-  //LoRa.writeRegister(REG_PA_DAC, 0x87); // That's for the transceiver
-  //LoRa.writeRegister(REG_LNA, 00); // TURN OFF LNA FOR TRANSMIT
-  //LoRa.idle();
+  LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON|SX127X_LNA_GAIN_1);
+  LoRa.idle();
 }
 
 
@@ -234,7 +206,7 @@ void onReceive(int packetSize)
   displayMsgS2(snr);
 
   //freq correction!!!
-  float ferr=0;
+  double ferr=0;
   int32_t freqError = ((LoRa.readRegister(0x28) & 0B111)<<16) + (LoRa.readRegister(0x29)<<8) + LoRa.readRegister(0x2a);
   
   int32_t bit=(freqError & (1<<19));
@@ -244,9 +216,9 @@ void onReceive(int packetSize)
     freqError -= 524288; // B1000'0000'0000'0000'0000
   }
 
-  float tf=((float)freqError*16777216/32E6)* (float)125 / 500.0f * 0.95*0.0001;
+  double tf=((double)freqError*16777216/32E6)* (double)125 / 500.0f * 0.0001;
 
-  
+  freqOffset=tf;
   
   SetPPMoffsetReg(tf);
     
@@ -334,57 +306,30 @@ void writeRegisterBits(uint8_t reg, uint8_t value, uint8_t mask)
 
 
 
-bool  GetFrequencyErrorbool()
+
+
+void  SetPPMoffsetReg(double offset)
 {
-  return (LoRa.readRegister(SX127X_REG_FEI_MSB) & 0b1000) >> 3; // returns true if pos freq error, neg if false
-}
 
-
-
-
-void  SetPPMoffsetReg(float offset)
-{
-    /*char msg[255]; 
-    int offs=round(offset);
-    LoRa.sleep();
-    int curroffset=LoRa.readRegister(SX127x_PPMOFFSET);
-    LoRa.writeRegister(SX127x_PPMOFFSET, curroffset-offs);
-    LoRa.idle();*/
-
-  
-
-  //uint64_t frf = ((uint64_t)frequency << 19) / 32000000;
   
   char msg[255]; 
-  currChannel -= offset*1E4;
   
-  //int offs=round(offset);
-  //currfreq -= offs;
-  LoRa.setFrequency(currChannel);
-
-  if((currChannel/10000)!=eepromChannel)
+  //freqOffset = offset;
+  if(abs(maxfreqOffset)<abs(offset))
   {
-      
-      
-      
-      
-      
-      if(millis()>10*1000)
-      {
-        eepromChannel = currChannel/10000;
-        EEPROM.writeLong64(2, eepromChannel);
-        EEPROM.commit();
-        sprintf(msg,"%uk %.1fk", eepromChannel, offset);
-        displayMsgS(msg);
-        Serial.print("new eepromchannel=");
-        Serial.println(eepromChannel);
-      }
+    maxfreqOffset=offset;    
   }
   else
   {
-      sprintf(msg,"of=%.1fk", offset);
-      displayMsgS(msg);
-
+    maxfreqOffset+=offset;
+    
   }
+  corrChannel = Channel - maxfreqOffset*1E4;
+  LoRa.setFrequency(corrChannel);
 
+  sprintf(msg,"%uk %.2fk", corrChannel/10000, freqOffset);
+  displayMsgS(msg);
+  Serial.print("new offset=");
+  Serial.println(freqOffset*10000);
+ 
 }

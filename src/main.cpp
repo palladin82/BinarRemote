@@ -65,6 +65,8 @@ bool timechanged=false;
 
 const int lcdBrightness = 10; // (0-255)
 float LoRaSNR=-20;
+double freqOffset=0;
+double maxfreqOffset=0;
 
 volatile static const unsigned long REFRESH_INTERVAL = 5000; // ms
 volatile int timetosleep=12; // timetosleep * REFRESH_INTERVAL
@@ -88,6 +90,7 @@ void fStart();
 void fStop();
 void exitF();
 void fWifion();
+void fWoffset();
 void sendStatus();
 void fMessage();
 void setBw();
@@ -198,9 +201,10 @@ SimpleMenu MenuSubSprd[] = {
 
 SimpleMenu MenuSub[] = {
   SimpleMenu("..",exitF),
-  SimpleMenu("Wifi On",fWifion), 
-  SimpleMenu("SetHour", &TS.tm_hour,0,24),
-  SimpleMenu("SetMin", &TS.tm_min,0,60)
+  SimpleMenu("Wifi On",fWifion),
+  SimpleMenu("Wr FQ ofs",fWoffset),
+  //SimpleMenu("SetHour", &TS.tm_hour,0,24),
+  //SimpleMenu("SetMin", &TS.tm_min,0,60)
   //SimpleMenu("Debug-On", ToggleDebug)
 };
 
@@ -210,7 +214,7 @@ SimpleMenu Menu[] = {
   SimpleMenu("Старт", fStart),
   SimpleMenu("Стоп", fStop),
   SimpleMenu("Запрос", fMessage),    
-  SimpleMenu("Конфиг", 4, MenuSub)
+  SimpleMenu("Конфиг", 3, MenuSub)
 };
 
 SimpleMenu TopMenu(4, Menu);
@@ -389,9 +393,9 @@ void fWifion()
 {
   wifi=true;
   WiFi.softAP(ssid, password);
-  LoRa.setFrequency(Channel);
-  eepromChannel = Channel/10000;
-  currChannel = Channel;
+  //LoRa.setFrequency(Channel);
+  //eepromChannel = Channel/10000;
+  //currChannel = Channel;
   
 
   IPAddress IP = WiFi.softAPIP();
@@ -552,11 +556,11 @@ void setup()
   
   debug = EEPROM.read(0);
 
-  eepromChannel = EEPROM.readLong64(2);
-  currChannel = eepromChannel * 10000;
+  freqOffset = EEPROM.readDouble(2);
+  //currChannel = eepromChannel * 10000;
 
-  Serial.print("eepromchannel=");
-  Serial.println(eepromChannel);
+  Serial.print("freqOffset eeprom=");
+  Serial.println(freqOffset);
 
 
   button.attachDoubleClick(doubleClick);
@@ -578,6 +582,7 @@ void setup()
   
   SPI.begin(SCK,MISO,MOSI,SS);
   LoRa_init();
+  SetPPMoffsetReg(freqOffset);
   TopMenu.begin(displayMenu, displayValue);
 
   
@@ -867,3 +872,8 @@ void sendStatus()
 */
 }
 
+void fWoffset()
+{
+    EEPROM.writeDouble(2,maxfreqOffset);
+    EEPROM.commit();
+}
