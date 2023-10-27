@@ -78,19 +78,22 @@ void LoRa_init()
   
   LoRa.setFrequency(corrChannel);
   LoRa.setOCP(240);
+  LoRa.setTxPower(20);
   LoRa.setTxPower(20, PA_OUTPUT_PA_BOOST_PIN);
   LoRa.writeRegister(REG_PA_CONFIG, 0xff);
-  LoRa.setPreambleLength(6);
+  LoRa.setPreambleLength(16);
   LoRa.setCodingRate4(7);
   LoRa.setSpreadingFactor(12);
   LoRa.setSignalBandwidth(125E3);
+  LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3,RF_RXCONFIG_AGCAUTO_ON);
   //LoRa.enableCrc();
-  //LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3,RF_RXCONFIG_AGCAUTO_OFF);
+  /*LoRa.writeRegister(SX1278_REG_MODEM_CONFIG_3,RF_RXCONFIG_AGCAUTO_ON);
   LoRa.writeRegister(SX127X_REG_DETECT_OPTIMIZE, 0x63);
   writeRegisterBits(SX127X_REG_DETECT_OPTIMIZE, SX127X_DETECT_OPTIMIZE_SF_7_12, SX127X_DETECT_OPTIMIZE_SF_MASK );
   LoRa.writeRegister(SX127X_REG_DETECTION_THRESHOLD, SX127X_DETECTION_THRESHOLD_SF_7_12 );
   LoRa.writeRegister(SX127X_REG_LNA, SX127X_LNA_BOOST_ON|SX127X_LNA_GAIN_1);
-  LoRa.idle();
+  */
+ LoRa.idle();
 }
 
 
