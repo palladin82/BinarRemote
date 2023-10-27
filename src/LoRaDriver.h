@@ -69,6 +69,7 @@ void LoRa_init()
   corrChannel += freqOffset*1E4;
 
   LoRa.prebegin(corrChannel);
+  RxChainCalibration();
   LoRa.begin(corrChannel);
 
   LoRa.writeRegister(SX127X_REG_OP_MODE, SX127x_OPMODE_SLEEP);
