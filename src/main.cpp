@@ -142,27 +142,9 @@ void goto_deepsleep()
         displayMsgS("going to sleep!");        
       }
       
-      //pinMode(14, INPUT_PULLUP);
-      //delay(2);
-
-
-      //gpio_hold_en((gpio_num_t)14);
-
-
-      //gpio_deep_sleep_hold_en();
-
-      //if(esp_sleep_enable_ext0_wakeup(GPIO_NUM_26, HIGH)==ESP_OK) Serial.println("Lora sleep sleep configured");
-      //else Serial.println("GPIO_26 sleep ERR");
       
       if(esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW)==ESP_OK) Serial.println("GPIO_button sleep configured"); //BUTTON_PIN_BITMASK
       else Serial.println("GPIO_button sleep ERR");
-      
-      //char tempSs[255];
-      
-      
-      
-      //ulp_start();
-      //esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
       
       LoRa.sleep();
       esp_deep_sleep_start();
@@ -342,9 +324,7 @@ SimpleMenu* ShowAllNext(SimpleMenu *menu, char *buf)
 void setSprd(int *param)
 {
   int index = * (int *) param;
-  //MyHeater.Status = uint8_t(index);
   if(index==5&&debug) Serial.println("OK !!!!!!!!!!!!");
-  //return true;
 }
 
 
@@ -393,9 +373,6 @@ void fWifion()
 {
   wifi=true;
   WiFi.softAP(ssid, password);
-  //LoRa.setFrequency(Channel);
-  //eepromChannel = Channel/10000;
-  //currChannel = Channel;
   
 
   IPAddress IP = WiFi.softAPIP();
@@ -414,7 +391,6 @@ void fWifion()
   httpServer.begin();
  
   MDNS.addService("http", "tcp", 80);
-  //Serial.print("HTTPUpdateServer ready! Open http://%s.local/update in your browser\n", host);
   tick=-20;
 }
 
@@ -426,12 +402,6 @@ void fStart()
     commandQueueD++;
     commandQueue[commandQueueD]=0xF8;
   }
-  //sendHEX(0xF8);
-    if(debug)
-    {
-      //displayMsg(print(&MyHeater.start));
-      //Serial.println(print(&MyHeater.start));
-    }
 }
 
 void fStop()
@@ -441,12 +411,6 @@ void fStop()
     commandQueueD++;
     commandQueue[commandQueueD]=0xFC;
   }
-    //sendHEX(0xFC);
-    if(debug)
-    {
-      //displayMsg(print(&MyHeater.shutdown));
-      //Serial.println(print(&MyHeater.shutdown));
-    } 
 }
 
 void fGetStatus()
@@ -456,12 +420,6 @@ void fGetStatus()
     commandQueueD++;
     commandQueue[commandQueueD]=0x08;
   }
-  //sendHEX(0x08);
-  if(debug)
-  {
-    //displayMsg(print(&MyHeater.shutdown));
-    //Serial.println(print(&MyHeater.shutdown));
-  } 
 }
 
 
@@ -485,7 +443,6 @@ void exitF()
 
 void doubleClick()
 {
-  //Serial.println("DBL");
   tick=0;
   TopMenu.up();
   
@@ -493,14 +450,12 @@ void doubleClick()
 
 void Click()
 {
-  //Serial.println("CL");
   tick=0;
   TopMenu.down();
 }
 
 void longClick()
 {
-  //Serial.println("LNG-CL");
   tick=0;
   TopMenu.select();
 }
@@ -557,7 +512,6 @@ void setup()
   debug = EEPROM.read(0);
 
   freqOffset = EEPROM.readDouble(2);
-  //currChannel = eepromChannel * 10000;
 
   Serial.print("freqOffset eeprom=");
   Serial.println(freqOffset);
@@ -629,7 +583,6 @@ esp_task_wdt_reset();
 while(1)
 {
     vTaskDelay(1);
-    //esp_task_wdt_reset();
     onReceive(LoRa.parsePacket());
     
     if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
@@ -650,10 +603,6 @@ while(1)
           if(temp=='+')fStart();
           if(temp=='-')fStop();
           if(temp=='s')fSettings();
-          //mySerial.end();
-          //mySerial.begin(speed);
-          
-          //Serial.println(speed);
       }
       lastRefreshTime += REFRESH_INTERVAL;
       
@@ -666,28 +615,18 @@ while(1)
         displayMsg(tempstr);
       }
 
-      /*if(LoraCommand==0)
-      {
-          //sendPing();
-          //sendStatus();
-          fGetStatus();
-          
-      } */   
       if(LoraCommand==1)
       {
-          //fStart();
           displayMsg("Старт OK");
           LoraCommand=0;
       }
       
       if(LoraCommand==2)
       {
-          //fStop();
           displayMsg("Стоп OK");
           LoraCommand=0;
       }
       
-      //if(status)fGetStatus();
 
       if(commandQueueD>0)
       {
@@ -737,30 +676,31 @@ void loop()
 {
   if(wifi)httpServer.handleClient();
   onReceive(LoRa.parsePacket());
-  
-	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
-	{
-    
-    
+
+
     if(Serial.available())
     {
         char temp;
         int speed=2400;
         temp=Serial.read();
-        if(temp=='1')speed=1200;
-        if(temp=='2')speed=2400;
-        if(temp=='3')speed=4800;
-        if(temp=='4')speed=9600;
-        if(temp=='5')speed=57600;
-        if(temp=='d')debug=1;
-        if(temp=='+')fStart();
-        if(temp=='-')fStop();
-        if(temp=='s')fSettings();
-        //mySerial.end();
-        //mySerial.begin(speed);
-        
-        //Serial.println(speed);
+        if(temp=='g')
+        {
+          String gain;
+          Serial.print("\r\nGain=");
+          Serial.setTimeout(50000);
+          gain=Serial.read();
+          LoRa.setGain(atoi(gain.c_str()));
+          Serial.println("gain set!");
+        }
+        tick=0;
     }
+
+  
+	if(millis() - lastRefreshTime >= REFRESH_INTERVAL)
+	{
+    
+    
+    
     lastRefreshTime += REFRESH_INTERVAL;
 		
 
@@ -775,19 +715,16 @@ void loop()
     
     if(LoraCommand==1)
     {
-        //fStart();
         displayMsg("Старт OK");
         LoraCommand=0;
     }
     
     if(LoraCommand==2)
     {
-        //fStop();
         displayMsg("Стоп OK");
         LoraCommand=0;
     }
     
-    //if(status)fGetStatus();
 
     if(commandQueueD>0)
     {
@@ -824,11 +761,7 @@ void loop()
     
 	}
 
-  //button.tick();
-  //esp_task_wdt_reset();
   vTaskDelay(1);
-
-    
   
 }
 
@@ -837,9 +770,6 @@ void display_task(void * pvParameters)
   
   for(;;)
   {
-    //wdt
-    //esp_task_wdt_reset();
-    //onReceive(LoRa.parsePacket());
     button.tick();  
     vTaskDelay(10);
   }
