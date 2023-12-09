@@ -286,6 +286,7 @@ void displayMenu(SimpleMenu *_menu)
 void displayValue(SimpleMenu *_menu)
 {
   TS=rtc.getTimeStruct();
+  //rtc.setTime()
   int menucnt = 10;
   u8g2->setDrawColor(0);
   u8g2->drawBox(0, 0, 64, 60);
@@ -299,7 +300,7 @@ void displayValue(SimpleMenu *_menu)
   u8g2->setCursor(0, menucnt);
   u8g2->print(buf);
   u8g2->sendBuffer();
-  rtc.setTimeStruct(TS);
+  //rtc.setTimeStruct(TS);
   //timechanged = true;
 
 }
@@ -497,7 +498,7 @@ void setup()
   Serial.begin(115200);
   while (!Serial);
 
-  if(rtc.getHour()==3) rtc.setTime(0, 54, 9, 23, 10, 2023); //GMT TIME
+  //if(rtc.getHour()==3) rtc.setTime(12, 54, 9, 23, 10, 2023); //GMT TIME
   
 
   EEPROM.begin(256);

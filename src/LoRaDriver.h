@@ -31,7 +31,7 @@ int interval = 2000;          // interval between sends
 
 int LoraCommand=0;
 int LoraTemp=0;
-int LoraStatus=0;
+int LoraStatus=1;
 int LoraBatt=0;
 extern float LoRaSNR;
 
@@ -74,11 +74,12 @@ void LoRa_init()
 
   LoRa.setFrequency(corrChannel);
   LoRa.setOCP(240);
-  LoRa.setPreambleLength(16);
+  LoRa.setPreambleLength(8);
   LoRa.setCodingRate4(7);
   LoRa.setSpreadingFactor(12);
-  LoRa.setSignalBandwidth(125E3);
+  LoRa.setSignalBandwidth(125E3);  
 
+  //LoRa.writeRegister(REG_PAYLOADLENGTH, 0x32 );
   LoRa.writeRegister(REG_PA_CONFIG, 0x80 | 0xf); //power by hand +15dBm  80=PA_BOOST 0f=MaxPower
   LoRa.writeRegister(REG_PA_DAC, 0x87);// power amplifier by hand 0x04=default value 0x07=PABOOST
   LoRa.writeRegister(REG_LNA, (0x20|0x1)); //lna boost by hand
@@ -96,6 +97,7 @@ void sendMessage(String outgoing)
   LoRa.write(localAddress);             // add sender address
   LoRa.write(msgCount);                 // add message ID
   LoRa.write(outgoing.length());        // add payload length
+  Serial.println(outgoing.length());
   LoRa.print(outgoing);                 // add payload
   LoRa.endPacket();                    // finish packet and send it
   msgCount++;
@@ -169,12 +171,17 @@ void onReceive(int packetSize)
   {
      LoraCommand=2;
   }
+
   if (incoming[0] == 0xAA)
   {
-     LoraBatt = incoming[1];
-     LoraTemp = incoming[2];
-     LoraStatus = incoming[3];
+    //unsigned long time;
+    LoraBatt = incoming[1];
+    LoraTemp = incoming[2];
+    LoraStatus = incoming[3];
+    time_t time = incoming[4] | (incoming[5] << 8) | (incoming[6] << 16) | (incoming[7] << 24);
+    if(time!=rtc.getEpoch())rtc.setTime(time);   
   }
+
   if (incoming[0] == 0x08)
   {
      LoraCommand=3;
@@ -188,6 +195,11 @@ void onReceive(int packetSize)
      displayMsgS0(incoming);
   }
 
+  if(incoming[0]=='t')
+  {
+    unsigned long time;
+    time = incoming[1] | (incoming[2] << 8) | (incoming[3] << 16) | (incoming[4] << 24);    
+  }
 
   Serial.println(incoming);
   char rssi[16];
