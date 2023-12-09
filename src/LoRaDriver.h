@@ -13,7 +13,7 @@
 #define REG_PA_CONFIG            0x09
 #define REG_PA_DAC               0x4d
 #define REG_LNA                  0x0c
-#define Channel                  8693E5
+#define Channel                  9093E5
 
 
 extern double freqOffset;
