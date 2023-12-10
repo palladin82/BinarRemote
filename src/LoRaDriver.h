@@ -18,6 +18,7 @@
 
 extern double freqOffset;
 extern double maxfreqOffset;
+extern bool remoteTimeSet,localTimeSet;
 long corrChannel;
 
 String outgoing;              // outgoing message
@@ -179,7 +180,13 @@ void onReceive(int packetSize)
     LoraTemp = incoming[2];
     LoraStatus = incoming[3];
     time_t time = incoming[4] | (incoming[5] << 8) | (incoming[6] << 16) | (incoming[7] << 24);
-    if(time!=rtc.getEpoch())rtc.setTime(time);   
+    remoteTimeSet = incoming[8];
+    if(!localTimeSet && remoteTimeSet)
+    {
+      rtc.setTime(time);
+      localTimeSet=true;
+    }
+
   }
 
   if (incoming[0] == 0x08)

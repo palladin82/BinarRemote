@@ -61,7 +61,9 @@ bool pult=false;
 RTC_DATA_ATTR int bootCount = 0;
 ESP32Time rtc(10800); //gmt+3
 tm TS;
-bool timechanged=false;
+bool localTimeSet=false;
+bool remoteTimeSet=false;
+
 
 const int lcdBrightness = 10; // (0-255)
 float LoRaSNR=-20;
