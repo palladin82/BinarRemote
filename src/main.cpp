@@ -67,7 +67,7 @@ bool remoteTimeSet=false;
 
 const int lcdBrightness = 10; // (0-255)
 float LoRaSNR=-20;
-double freqOffset=0;
+RTC_DATA_ATTR double freqOffset=0;
 double maxfreqOffset=0;
 
 volatile static const unsigned long REFRESH_INTERVAL = 5000; // ms
